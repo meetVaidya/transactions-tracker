@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Overview } from "@/components/overview";
 import { RecentSales } from "@/components/recent-sales";
+import Link from "next/link";
 
 // Create an interface for the data structure
 interface DashboardData {
@@ -52,15 +53,26 @@ export default function DashboardPage() {
           <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         </div>
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="analytics" disabled>
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="reports" disabled>
+          <div className="flex space-x-4">
+            <Link
+              href="/"
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground"
+            >
+              Overview
+            </Link>
+            <Link
+              href="/visualizations"
+              className="px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground"
+            >
+              Visualizations
+            </Link>
+            <Link
+              href="/reports"
+              className="px-4 py-2 rounded-lg bg-muted text-muted-foreground cursor-not-allowed"
+            >
               Reports
-            </TabsTrigger>
-          </TabsList>
+            </Link>
+          </div>
           <TabsContent value="overview" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card>
