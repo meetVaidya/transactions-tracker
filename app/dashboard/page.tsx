@@ -1,49 +1,47 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Overview } from "@/components/overview";
 import { RecentSales } from "@/components/recent-sales";
+import { useEffect, useState } from "react";
 
-// Create an interface for the data structure
-interface DashboardData {
-  totalAmount: number;
-  uniqueUsers: number;
-  merchantStates: number;
-  recentTransactions: any[];
-  monthlyData: any[];
+async function getData() {
+  const res = await fetch("http://localhost:3000/api/dashboard", {
+    next: { revalidate: 60 },
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch data");
+  }
+  return res.json();
 }
 
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData>({
-    totalAmount: 0,
-    uniqueUsers: 0,
-    merchantStates: 0,
-    recentTransactions: [],
-    monthlyData: [],
-  });
-
-  const fetchData = async () => {
-    try {
-      const response = await fetch("/api/dashboard"); // You'll need to create this API route
-      const newData = await response.json();
-      setData(newData);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  };
+  const [data, setData] = useState<{
+    totalAmount: number;
+    uniqueUsers: number;
+    merchantStates: number;
+    monthlyData: any[];
+    recentTransactions: any[];
+  } | null>(null);
 
   useEffect(() => {
-    // Fetch initial data
+    const fetchData = async () => {
+      const result = await getData();
+      setData(result);
+    };
+
     fetchData();
 
-    // Set up interval to fetch data every 5 seconds
-    const intervalId = setInterval(fetchData, 1000);
+    const interval = setInterval(() => {
+      fetchData();
+    }, 5000);
 
-    // Cleanup interval on component unmount
-    return () => clearInterval(intervalId);
+    return () => clearInterval(interval);
   }, []);
+
+  if (!data) return <div>Loading...</div>;
 
   return (
     <div className="hidden flex-col md:flex">
@@ -54,6 +52,9 @@ export default function DashboardPage() {
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="visualizations">
+              <Link href="/visualizations">Visualizations</Link>
+            </TabsTrigger>
             <TabsTrigger value="analytics" disabled>
               Analytics
             </TabsTrigger>
@@ -82,7 +83,9 @@ export default function DashboardPage() {
                   </svg>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">${data.totalAmount}</div>
+                  <div className="text-2xl font-bold">
+                    ${data.totalAmount.toFixed(2)}
+                  </div>
                 </CardContent>
               </Card>
               <Card>
