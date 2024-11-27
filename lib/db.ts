@@ -1,14 +1,110 @@
 import { Pool } from "pg";
 
 const pool = new Pool({
-  user: "admin", // Username from the image
-  host: "timescaledb", // Host URL from the image
-  database: "financial_transactions", // Database name from the image
-  password: "password", // Replace this with the actual password
-  port: 5432, // Port from the image
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: 5432,
 });
 
-export const query = async (text: string, params?: any[]) => {
-  const res = await pool.query(text, params);
-  return res.rows;
-};
+export async function getDashboardData() {
+  const client = await pool.connect();
+  try {
+    const totalAmount = await client.query(
+      "SELECT SUM(amount) as total FROM transaction",
+    );
+    const uniqueUsers = await client.query(
+      "SELECT COUNT(DISTINCT client_id) as count FROM transaction",
+    );
+    const merchantStates = await client.query(
+      "SELECT COUNT(DISTINCT merchant_state) as count FROM transaction",
+    );
+    const recentTransactions = await client.query(
+      "SELECT * FROM transaction ORDER BY date DESC LIMIT 5",
+    );
+    const monthlyData = await client.query(`
+      SELECT
+        date_trunc('month', date) as month,
+        SUM(amount) as total
+      FROM transaction
+      GROUP BY date_trunc('month', date)
+      ORDER BY month
+      LIMIT 12
+    `);
+
+    return {
+      totalAmount: totalAmount.rows[0].total,
+      uniqueUsers: uniqueUsers.rows[0].count,
+      merchantStates: merchantStates.rows[0].count,
+      recentTransactions: recentTransactions.rows,
+      monthlyData: monthlyData.rows,
+    };
+  } finally {
+    client.release();
+  }
+}
+
+export async function getVisualizationData() {
+  const client = await pool.connect();
+  try {
+    const volumeData = await client.query(`
+      SELECT date_trunc('day', date) as day, COUNT(*) as count
+      FROM transaction
+      GROUP BY day
+      ORDER BY day
+      LIMIT 30
+    `);
+
+    const latencyData = await client.query(`
+      SELECT date_trunc('hour', date) as hour, AVG(EXTRACT(EPOCH FROM (date - lag(date) OVER (ORDER BY date)))) as avg_latency
+      FROM transaction
+      GROUP BY hour
+      ORDER BY hour
+      LIMIT 24
+    `);
+
+    const statusData = await client.query(`
+      SELECT
+        CASE
+          WHEN use_chip = true THEN 'Chip'
+          ELSE 'Non-Chip'
+        END as status,
+        COUNT(*) as count
+      FROM transaction
+      GROUP BY status
+    `);
+
+    const topRegionsData = await client.query(`
+      SELECT merchant_state, COUNT(*) as count, SUM(amount) as total_amount
+      FROM transaction
+      GROUP BY merchant_state
+      ORDER BY count DESC
+      LIMIT 10
+    `);
+
+    const mapData = await client.query(`
+      SELECT merchant_state, COUNT(*) as count
+      FROM transaction
+      GROUP BY merchant_state
+    `);
+
+    const recentTransactions = await client.query(`
+      SELECT *
+      FROM transaction
+      ORDER BY date DESC
+      LIMIT 100
+    `);
+
+    return {
+      volumeData: volumeData.rows,
+      latencyData: latencyData.rows,
+      statusData: statusData.rows,
+      topRegionsData: topRegionsData.rows,
+      mapData: mapData.rows,
+      recentTransactions: recentTransactions.rows,
+    };
+  } finally {
+    client.release();
+  }
+}
