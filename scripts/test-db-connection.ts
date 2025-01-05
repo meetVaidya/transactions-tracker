@@ -3,7 +3,7 @@ import { Pool, PoolConfig } from "pg";
 // Database configuration
 const dbConfig: PoolConfig = {
   user: "admin", // Replace with your database user
-  host: "172.18.0.5", // IPv4Address of the container
+  host: "172.19.0.4", // IPv4Address of the container
   database: "financial_transactions", // Replace with your database name
   password: "password", // Replace with your password
   port: 5432, // Default PostgreSQL port

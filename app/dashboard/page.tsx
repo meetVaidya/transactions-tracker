@@ -84,7 +84,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    ${data.totalAmount.toFixed(2)}
+                    ${Number(data.totalAmount).toFixed(2)}
                   </div>
                 </CardContent>
               </Card>

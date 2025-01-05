@@ -12,22 +12,22 @@ export async function getDashboardData() {
   const client = await pool.connect();
   try {
     const totalAmount = await client.query(
-      "SELECT SUM(amount) as total FROM transaction",
+      "SELECT SUM(amount) as total FROM transactions",
     );
     const uniqueUsers = await client.query(
-      "SELECT COUNT(DISTINCT client_id) as count FROM transaction",
+      "SELECT COUNT(DISTINCT client_id) as count FROM transactions",
     );
     const merchantStates = await client.query(
-      "SELECT COUNT(DISTINCT merchant_state) as count FROM transaction",
+      "SELECT COUNT(DISTINCT merchant_state) as count FROM transactions",
     );
     const recentTransactions = await client.query(
-      "SELECT * FROM transaction ORDER BY date DESC LIMIT 5",
+      "SELECT * FROM transactions ORDER BY date DESC LIMIT 5",
     );
     const monthlyData = await client.query(`
       SELECT
         date_trunc('month', date) as month,
         SUM(amount) as total
-      FROM transaction
+      FROM transactions
       GROUP BY date_trunc('month', date)
       ORDER BY month
       LIMIT 12
@@ -50,7 +50,7 @@ export async function getVisualizationData() {
   try {
     const volumeData = await client.query(`
       SELECT date_trunc('day', date) as day, COUNT(*) as count
-      FROM transaction
+      FROM transactions
       GROUP BY day
       ORDER BY day
       LIMIT 30
@@ -58,7 +58,7 @@ export async function getVisualizationData() {
 
     const latencyData = await client.query(`
       SELECT date_trunc('hour', date) as hour, AVG(EXTRACT(EPOCH FROM (date - lag(date) OVER (ORDER BY date)))) as avg_latency
-      FROM transaction
+      FROM transactions
       GROUP BY hour
       ORDER BY hour
       LIMIT 24
@@ -71,13 +71,13 @@ export async function getVisualizationData() {
           ELSE 'Non-Chip'
         END as status,
         COUNT(*) as count
-      FROM transaction
+      FROM transactions
       GROUP BY status
     `);
 
     const topRegionsData = await client.query(`
       SELECT merchant_state, COUNT(*) as count, SUM(amount) as total_amount
-      FROM transaction
+      FROM transactions
       GROUP BY merchant_state
       ORDER BY count DESC
       LIMIT 10
@@ -85,13 +85,13 @@ export async function getVisualizationData() {
 
     const mapData = await client.query(`
       SELECT merchant_state, COUNT(*) as count
-      FROM transaction
+      FROM transactions
       GROUP BY merchant_state
     `);
 
     const recentTransactions = await client.query(`
       SELECT *
-      FROM transaction
+      FROM transactions
       ORDER BY date DESC
       LIMIT 100
     `);

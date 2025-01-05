@@ -8,7 +8,7 @@ export async function GET() {
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Internal Server Error muah" },
       { status: 500 },
     );
   }
